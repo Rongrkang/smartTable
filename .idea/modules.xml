@@ -2,9 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/form/form.iml" filepath="$PROJECT_DIR$/form/form.iml" />
-      <module fileurl="file://$PROJECT_DIR$/smartTable.iml" filepath="$PROJECT_DIR$/smartTable.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/smartTable.iml" filepath="$PROJECT_DIR$/.idea/modules/smartTable.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/smartTable.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/smartTable.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/form/smartTable.form.iml" filepath="$PROJECT_DIR$/.idea/modules/form/smartTable.form.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/simplexlspreview/smartTable.simplexlspreview.iml" filepath="$PROJECT_DIR$/.idea/modules/simplexlspreview/smartTable.simplexlspreview.iml" />
     </modules>
   </component>
 </project>

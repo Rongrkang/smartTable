@@ -24,7 +24,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.Call;
+//import okhttp3.Call;
 //测试是否和刷新加载更多冲突
 public class RefreshActivity extends AppCompatActivity {
 
@@ -69,47 +69,47 @@ public class RefreshActivity extends AppCompatActivity {
 
 
     public void getData(final boolean isFoot){
-        String url = "http://www.pm25.in/api/querys/pm10.json?city=%E4%B8%8A%E6%B5%B7&token=5j1znBVAsnSf5xQyNQyq&avg";
-        OkHttpUtils
-                .get()
-                .url(url)
-                .build()
-                .execute(new StringCallback() {
-                    @Override
-                    public void onError(Call call, Exception e, int id) {
-                        if(!isFoot) {
-                            refreshLayout.finishRefresh(false);
-                        }else{
-                            refreshLayout.finishLoadMore(false);
-                        }
-                    }
-
-                    @Override
-                    public void onResponse(String response, int id) {
-
-                        Gson gson = new Gson();
-                        try {
-                            Type type = new TypeToken<ArrayList<PM25>>() {}.getType();
-                            List<PM25> pm25List = gson.fromJson(response,type);
-                            if(isFrist) {
-                                table.setData(pm25List);
-                                isFrist = false;
-                            }else{
-                                if(!isFoot) {
-                                    refreshLayout.finishRefresh();
-                                }else{
-                                    refreshLayout.finishLoadMore();
-                                }
-                                table.addData(pm25List,isFoot);
-                            }
-                        }catch (Exception e){
-
-                        }
-
-
-                    }
-
-                });
+//        String url = "http://www.pm25.in/api/querys/pm10.json?city=%E4%B8%8A%E6%B5%B7&token=5j1znBVAsnSf5xQyNQyq&avg";
+//        OkHttpUtils
+//                .get()
+//                .url(url)
+//                .build()
+//                .execute(new StringCallback() {
+//                    @Override
+//                    public void onError(Call call, Exception e, int id) {
+//                        if(!isFoot) {
+//                            refreshLayout.finishRefresh(false);
+//                        }else{
+//                            refreshLayout.finishLoadMore(false);
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onResponse(String response, int id) {
+//
+//                        Gson gson = new Gson();
+//                        try {
+//                            Type type = new TypeToken<ArrayList<PM25>>() {}.getType();
+//                            List<PM25> pm25List = gson.fromJson(response,type);
+//                            if(isFrist) {
+//                                table.setData(pm25List);
+//                                isFrist = false;
+//                            }else{
+//                                if(!isFoot) {
+//                                    refreshLayout.finishRefresh();
+//                                }else{
+//                                    refreshLayout.finishLoadMore();
+//                                }
+//                                table.addData(pm25List,isFoot);
+//                            }
+//                        }catch (Exception e){
+//
+//                        }
+//
+//
+//                    }
+//
+//                });
     }
 
 
