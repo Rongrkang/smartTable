@@ -11,10 +11,10 @@ import com.bin.david.form.core.SmartTable;
 import com.bin.david.form.data.style.FontStyle;
 import com.bin.david.form.utils.DensityUtils;
 import com.bin.david.smarttable.adapter.SheetAdapter;
-import com.bin.david.smarttable.excel.ExcelCallback;
-import com.bin.david.smarttable.excel.IExcel2Table;
-import com.bin.david.smarttable.excel.POIExcel2Table;
 import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.wts.simplexlspreview.ExcelCallback;
+import com.wts.simplexlspreview.IExcel2Table;
+import com.wts.simplexlspreview.POIExcel2Table;
 
 import org.apache.poi.ss.usermodel.Cell;
 
@@ -29,7 +29,7 @@ public class POIExcelModeActivity extends AppCompatActivity implements ExcelCall
     private SmartTable<Cell> table;
 
     private RecyclerView recyclerView;
-    private String fileName = "c.xls";
+    private String fileName = "test.xlsx";
     private IExcel2Table<Cell> iExcel2Table;
 
 

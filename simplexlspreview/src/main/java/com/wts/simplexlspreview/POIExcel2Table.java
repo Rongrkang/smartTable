@@ -38,6 +38,14 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressBase;
+import org.apache.poi.xssf.usermodel.XSSFChart;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openxmlformats.schemas.drawingml.x2006.chart.CTChart;
+import org.openxmlformats.schemas.drawingml.x2006.chart.CTPieChart;
+import org.openxmlformats.schemas.drawingml.x2006.chart.CTPieSer;
+import org.openxmlformats.schemas.drawingml.x2006.chart.CTPlotArea;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,9 +73,9 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
     @Override
     public List<String> getSheetName(Context context, String fileName) throws Exception {
         List<String> list = new ArrayList<>();
-        Workbook workbook = getWorkBook(context,fileName);
+        Workbook workbook = getWorkBook(context, fileName);
         int sheetNum = workbook.getNumberOfSheets();
-        for(int i = 0;i < sheetNum;i++){
+        for (int i = 0; i < sheetNum; i++) {
             Sheet sheet = workbook.getSheetAt(i);
             list.add(sheet.getSheetName());
         }
@@ -78,26 +86,46 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
     @Override
     protected Cell[][] readExcelCell(Context context, String fileName, int position) throws Exception {
         chartData = null;
-        int maxRow, maxColumn;
-        HSSFWorkbook workbook = getWorkBook(context,fileName);
-        HSSFSheet sheet = workbook.getSheetAt(position);
+        Workbook workbook = getWorkBook(context, fileName);
+        Sheet sheet = workbook.getSheetAt(position);
         List<CellRangeAddress> ranges = sheet.getMergedRegions();
-        if(ranges !=null) {
+        if (ranges != null) {
             int size = ranges.size();
-            for (int i = 0;i < size;i++) {
-                CellRangeAddress range =ranges.get(i);
+            for (int i = 0; i < size; i++) {
+                CellRangeAddress range = ranges.get(i);
                 CellRange cellRange = new CellRange(range.getFirstRow(),
                         range.getLastRow(),
-                        range.getFirstColumn(),range.getLastColumn());
+                        range.getFirstColumn(), range.getLastColumn());
                 getRanges().add(cellRange);
             }
         }
-        HSSFChart[] charts = HSSFChart.getSheetCharts(sheet);
-        maxRow = sheet.getLastRowNum()+1;
-        int addRow = charts.length*40;
-        Cell[][] data = new Cell[maxRow+addRow][];
-        for (int i = 0; i < maxRow+addRow; i++) {
-            if(i < maxRow) {
+
+        Cell[][] data = null;
+        if (sheet instanceof HSSFSheet) {
+            data = HSSFChart(context, (HSSFSheet) sheet);
+        } else if (sheet instanceof XSSFSheet) {
+            data = XSSFChart(context, (XSSFSheet) sheet);
+        }
+
+        workbook.close();
+        //将行二维数组转换成列的二维数组
+        return ArrayTableData.transformColumnArray(data);
+    }
+
+    private Cell[][] XSSFChart(Context context, XSSFSheet sheet) {
+        int maxRow, maxColumn;
+
+        XSSFDrawing drawing = sheet.getDrawingPatriarch();
+        List<XSSFChart> charts = null;
+        if (drawing != null) {
+            charts = drawing.getCharts();
+        }
+
+        maxRow = sheet.getLastRowNum() + 1;
+        int addRow = charts == null ? 0 : charts.size() * 40;
+        Cell[][] data = new Cell[maxRow + addRow][];
+        for (int i = 0; i < maxRow + addRow; i++) {
+            if (i < maxRow) {
                 Row row = sheet.getRow(i);
                 maxColumn = row.getPhysicalNumberOfCells();
                 Cell[] rows = new Cell[maxColumn];
@@ -110,7 +138,78 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
                     }
                 }
                 data[i] = rows;
-            }else{
+            } else {
+                Cell[] rows = new Cell[20];
+                data[i] = rows;
+            }
+        }
+
+        if (charts != null) {
+            for (XSSFChart chart : charts) {
+                CTChart ctChart = chart.getCTChart();
+//                CTPlotArea plot = ctChart.getPlotArea();
+
+                //poi获取excel图表标题
+                String title = chart.getTitleText().toString();
+
+//                List<CTPieChart> pieChartList = plot.getPieChartList();
+//                for (CTPieChart pieChart : pieChartList) {
+//                    pieChart.get
+//
+//                }
+//
+//
+//                XSSFChart.XSSFSeries[] series = ctChart.getSeries();
+//                List<LineData> ColumnDatas = new ArrayList<>();
+//                List<String> chartYDataList = new ArrayList<>();
+//                for (HSSFChart.HSSFSeries se : series) {
+//                    //poi获取excel图表的值区域
+//                    ArrayList<Double> values = new ArrayList<>();
+//                    CellRangeAddressBase valueRange = se.getValuesCellRange();
+//                    for (int j = valueRange.getFirstColumn(); j <= valueRange.getLastColumn(); j++) {
+//                        for (int i = valueRange.getFirstRow(); i <= valueRange.getLastRow(); i++) {
+//                            Cell cell = data[i][j];
+//                            if (cell != null) {
+//                                double d = cell.getNumericCellValue();
+//                                if (d != 0) {
+//                                    values.add(d);
+//                                    chartYDataList.add(i + "");
+//                                }
+//                            }
+//                        }
+//                    }
+//                    final LineData columnData1 = new LineData("系列1", "", IAxis.AxisDirection.LEFT,
+//                            context.getResources().getColor(R.color.arc23), values);
+//                    ColumnDatas.add(columnData1);
+//                    chartData = new ChartData<>(title == null || title.length() == 0 ? "图表标题" : title, chartYDataList, ColumnDatas);
+//                }
+            }
+        }
+
+        return data;
+    }
+
+    private Cell[][] HSSFChart(Context context, HSSFSheet sheet) {
+        int maxRow, maxColumn;
+        HSSFChart[] charts = HSSFChart.getSheetCharts(sheet);
+        maxRow = sheet.getLastRowNum() + 1;
+        int addRow = charts.length * 40;
+        Cell[][] data = new Cell[maxRow + addRow][];
+        for (int i = 0; i < maxRow + addRow; i++) {
+            if (i < maxRow) {
+                Row row = sheet.getRow(i);
+                maxColumn = row.getPhysicalNumberOfCells();
+                Cell[] rows = new Cell[maxColumn];
+                for (int j = 0; j < maxColumn; j++) {
+                    Cell cell = row.getCell(j);
+                    if (cell != null) {
+                        rows[j] = cell;
+                    } else {
+                        rows[j] = null;
+                    }
+                }
+                data[i] = rows;
+            } else {
                 Cell[] rows = new Cell[20];
                 data[i] = rows;
             }
@@ -128,38 +227,36 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
                 //poi获取excel图表的值区域
                 ArrayList<Double> values = new ArrayList<>();
                 CellRangeAddressBase valueRange = se.getValuesCellRange();
-                for(int j = valueRange.getFirstColumn(); j <= valueRange.getLastColumn();j++){
-                    for(int i = valueRange.getFirstRow(); i <= valueRange.getLastRow();i++){
+                for (int j = valueRange.getFirstColumn(); j <= valueRange.getLastColumn(); j++) {
+                    for (int i = valueRange.getFirstRow(); i <= valueRange.getLastRow(); i++) {
                         Cell cell = data[i][j];
-                        if(cell !=null){
+                        if (cell != null) {
                             double d = cell.getNumericCellValue();
-                            if(d !=0) {
+                            if (d != 0) {
                                 values.add(d);
-                                chartYDataList.add(i+ "");
+                                chartYDataList.add(i + "");
                             }
                         }
-                     }
+                    }
                 }
                 final LineData columnData1 = new LineData("系列1", "", IAxis.AxisDirection.LEFT,
                         context.getResources().getColor(R.color.arc23), values);
                 ColumnDatas.add(columnData1);
-                chartData = new ChartData<>(title== null|| title.length() ==0 ?"图表标题":title, chartYDataList, ColumnDatas);
+                chartData = new ChartData<>(title == null || title.length() == 0 ? "图表标题" : title, chartYDataList, ColumnDatas);
             }
-
         }
-        workbook.close();
-        //将行二维数组转换成列的二维数组
-        return  ArrayTableData.transformColumnArray(data);
+        return data;
     }
 
     @Override
-    protected int getFontSize(Context context,Cell cell) {
+    protected int getFontSize(Context context, Cell cell) {
         int fontSize = cell.getCellStyle().getFontIndex();
-        return fontSize >0 ?fontSize:12;
+        return fontSize > 0 ? fontSize : 12;
     }
 
     /**
      * 实验固定图表
+     *
      * @param context
      */
     @Override
@@ -209,25 +306,25 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
         lineChart.getLegend().setDirection(IComponent.BOTTOM);
         lineChart.getLegend().setPercent(0.2f);
         lineChart.setFirstAnim(false);
-        if(chartData !=null) {
+        if (chartData != null) {
             lineChart.setChartData(chartData);
         }
         smartTable.getProvider().setDrawOver(new IDrawOver() {
             @Override
-            public void draw(Canvas canvas, Rect scaleRect,Rect showRect, TableConfig config) {
-                if(chartData !=null) {
+            public void draw(Canvas canvas, Rect scaleRect, Rect showRect, TableConfig config) {
+                if (chartData != null) {
 
                     //暂时写死图表位置 如果能读取出图表位置就可以通过位置计算出来
-                    int w = (int)(smartTable.getWidth()*smartTable.getConfig().getZoom()*0.9);
-                    int h = (int)(smartTable.getHeight()*smartTable.getConfig().getZoom()*0.75);
-                    setLineChart(lineChart,w,h);
+                    int w = (int) (smartTable.getWidth() * smartTable.getConfig().getZoom() * 0.9);
+                    int h = (int) (smartTable.getHeight() * smartTable.getConfig().getZoom() * 0.75);
+                    setLineChart(lineChart, w, h);
 
-                    int padding = (int) (smartTable.getConfig().getZoom()*50);
-                    canvas.translate(scaleRect.right-w -padding, scaleRect.top+padding);
+                    int padding = (int) (smartTable.getConfig().getZoom() * 50);
+                    canvas.translate(scaleRect.right - w - padding, scaleRect.top + padding);
                     Paint paint = config.getPaint();
                     paint.setStyle(Paint.Style.FILL);
                     paint.setColor(Color.WHITE);
-                    canvas.drawRect(0,0,w,h,paint);
+                    canvas.drawRect(0, 0, w, h, paint);
                     lineChart.draw(canvas);
 
 
@@ -237,16 +334,16 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
 
     }
 
-    private void setLineChart(LineChart lineChart,int width,int height) {
+    private void setLineChart(LineChart lineChart, int width, int height) {
         Class clazz = BaseChart.class;
         try {
-            Field field1 =  clazz.getDeclaredField("width");
-            Field field2= clazz.getDeclaredField("height");
+            Field field1 = clazz.getDeclaredField("width");
+            Field field2 = clazz.getDeclaredField("height");
 
             field1.setAccessible(true);
             field2.setAccessible(true);
-            field1.set(lineChart,width);
-            field2.set(lineChart,height);
+            field1.set(lineChart, width);
+            field2.set(lineChart, height);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
@@ -255,13 +352,13 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
     }
 
     @Override
-    protected int getTextColor(Context context,Cell cell) {
+    protected int getTextColor(Context context, Cell cell) {
         return textColor;
     }
 
     @Override
     protected int getBackgroundColor(Context context, Cell cell) {
-        if( cell.getCellStyle() !=null) {
+        if (cell.getCellStyle() != null) {
             return cell.getCellStyle().getFillBackgroundColor();
         }
         return TableConfig.INVALID_COLOR;
@@ -285,18 +382,22 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
         return false;
     }
 
-    public  HSSFWorkbook getWorkBook(Context context,String fileName)throws Exception {
+    public Workbook getWorkBook(Context context, String fileName) throws Exception {
 
         //创建Workbook工作薄对象，表示整个excel
-        HSSFWorkbook workbook = null;
+        Workbook workbook = null;
         try {
             //获取excel文件的io流
-            InputStream is = getInputStream(context,fileName);
-            if(fileName.endsWith("xls")){
+            InputStream is = getInputStream(context, fileName);
+            if (fileName.endsWith("xls")) {
                 //2003
                 workbook = new HSSFWorkbook(is);
+            } else if (fileName.endsWith("xlsx")) {
+                workbook = new XSSFWorkbook(is);
             }
         } catch (IOException e) {
+            e.printStackTrace();
+
         }
         return workbook;
     }
