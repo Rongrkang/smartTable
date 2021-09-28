@@ -383,22 +383,30 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
     }
 
     public Workbook getWorkBook(Context context, String fileName) throws Exception {
+        InputStream input = null;
+        try {
+            //获取excel文件的io流
+            input = getInputStream(context, fileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (input == null) return null;
 
         //创建Workbook工作薄对象，表示整个excel
         Workbook workbook = null;
-        try {
-            //获取excel文件的io流
-            InputStream is = getInputStream(context, fileName);
-            if (fileName.endsWith("xls")) {
-                //2003
-                workbook = new HSSFWorkbook(is);
-            } else if (fileName.endsWith("xlsx")) {
-                workbook = new XSSFWorkbook(is);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
 
+        try {
+            workbook = new HSSFWorkbook(input);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            try {
+                workbook = new XSSFWorkbook(input);
+            } catch (IOException ex1) {
+                ex1.printStackTrace();
+            }
         }
+
         return workbook;
     }
 
