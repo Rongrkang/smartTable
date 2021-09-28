@@ -391,7 +391,7 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
             //获取excel文件的io流
             input = getInputStream(context, fileName);
             workbook = new HSSFWorkbook(input);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             if (input != null) {
                 try {
@@ -404,7 +404,7 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
             input = getInputStream(context, fileName);
             try {
                 workbook = new XSSFWorkbook(input);
-            } catch (IOException ex1) {
+            } catch (Exception ex1) {
                 ex1.printStackTrace();
                 if (input != null) {
                     try {
