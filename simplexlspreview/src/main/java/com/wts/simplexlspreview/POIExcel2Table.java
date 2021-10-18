@@ -40,6 +40,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressBase;
 import org.apache.poi.xssf.usermodel.XSSFChart;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
+import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openxmlformats.schemas.drawingml.x2006.chart.CTChart;
@@ -51,7 +52,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.TreeMap;
 
 /**
  * Created by huang on 2018/1/23.
@@ -121,28 +124,49 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
             charts = drawing.getCharts();
         }
 
-        maxRow = sheet.getLastRowNum() + 1;
-        int addRow = charts == null ? 0 : charts.size() * 40;
-        Cell[][] data = new Cell[maxRow + addRow][];
-        for (int i = 0; i < maxRow + addRow; i++) {
-            if (i < maxRow) {
-                Row row = sheet.getRow(i);
+        try {
+            Field _rowsField = XSSFSheet.class.getDeclaredField("_rows");
+            _rowsField.setAccessible(true);
+            TreeMap<Integer, XSSFRow> _rowsMap = (TreeMap) _rowsField.get(sheet);
+            Cell[][] data = new Cell[_rowsMap.size()][];
+            int index = 0;
+            for (Integer key : _rowsMap.keySet()) {
+                Row row = _rowsMap.get(key);
                 maxColumn = row.getPhysicalNumberOfCells();
                 Cell[] rows = new Cell[maxColumn];
                 for (int j = 0; j < maxColumn; j++) {
-                    Cell cell = row.getCell(j);
-                    if (cell != null) {
-                        rows[j] = cell;
-                    } else {
-                        rows[j] = null;
-                    }
+                    rows[j] = row.getCell(j);
                 }
-                data[i] = rows;
-            } else {
-                Cell[] rows = new Cell[20];
-                data[i] = rows;
+                data[index] = rows;
+                index++;
             }
+            return data;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+//        maxRow = sheet.getLastRowNum();
+//        Iterator<Row> iterator = sheet.iterator();
+//        int addRow = charts == null ? 0 : charts.size() * 40;
+//        Cell[][] data = new Cell[maxRow + addRow][];
+//        for (int i = 0; i < maxRow + addRow; i++) {
+//            if (i < maxRow) {
+//                Row row = sheet.getRow(i);
+//                maxColumn = row.getPhysicalNumberOfCells();
+//                Cell[] rows = new Cell[maxColumn];
+//                for (int j = 0; j < maxColumn; j++) {
+//                    Cell cell = row.getCell(j);
+//                    if (cell != null) {
+//                        rows[j] = cell;
+//                    } else {
+//                        rows[j] = null;
+//                    }
+//                }
+//                data[i] = rows;
+//            } else {
+//                Cell[] rows = new Cell[20];
+//                data[i] = rows;
+//            }
+//        }
 
         if (charts != null) {
             for (XSSFChart chart : charts) {
@@ -185,8 +209,7 @@ public class POIExcel2Table extends BaseExcel2Table<Cell> {
 //                }
             }
         }
-
-        return data;
+        return null;
     }
 
     private Cell[][] HSSFChart(Context context, HSSFSheet sheet) {
